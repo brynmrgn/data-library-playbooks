@@ -89,6 +89,17 @@ readability; the link targets are encoded.
   retained hereditaries), not the larger pre-reform chamber. Treat the query as
   reliable from 2000 onwards; for earlier snapshots, the data isn't there.
 
+- **State of the parties in a House** — there's no standings entity and OData v3
+  can't aggregate, so fetch the current members of the House and tally the
+  `Party` field client-side. The browsable source query (Commons):
+  [`Members?$filter=House_Id eq 1 and CurrentStatusActive eq true&$select=Member_Id,Party`](https://data.parliament.uk/membersdataplatform/open/OData.svc/Members?$filter=House_Id%20eq%201%20and%20CurrentStatusActive%20eq%20true&$select=Member_Id,Party)
+
+  Use `House_Id eq 2` for the Lords. Two cautions when reading the result: the
+  Speaker appears under their own "party" label (the Speaker sits apart from
+  party), and the tally counts whole membership, not voting strength — non-sitting
+  members (e.g. Sinn Féin) and the non-voting Speaker and deputies mean an
+  effective-majority figure is a further calculation, not the raw breakdown.
+
 A note on null filtering: the `ne null` trap above is specific to `ne null`.
 `EndDate eq null` *does* filter correctly (it's how "still in post" / "still
 sitting" is expressed), and filters on expanded navigation properties such as
