@@ -51,6 +51,49 @@ Useful fields: `Member_Id`, `NameDisplayAs`, `Party`, `House` / `House_Id`
   member**, by policy. The fields exist but are never populated. For biographical
   data, join to Wikidata on `Member_Id` (the `P10428` property).
 
+## Common queries
+
+Each links to live results (Atom XML). Visible labels are unencoded for
+readability; the link targets are encoded.
+
+- **Current MPs** (Commons, sitting):
+  [`Members?$filter=House_Id eq 1 and CurrentStatusActive eq true`](https://data.parliament.uk/membersdataplatform/open/OData.svc/Members?$filter=House_Id%20eq%201%20and%20CurrentStatusActive%20eq%20true)
+
+- **MPs who are ministers** — government posts join to `Members` via `Member_Id`,
+  and `EndDate eq null` selects posts still held. Filter on the expanded
+  `Member/House_Id` to keep Commons only (this nav-property filter *is* honoured —
+  see the null note below):
+  [`MemberGovernmentPosts?$filter=EndDate eq null and Member/House_Id eq 1&$expand=Member`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberGovernmentPosts?$filter=EndDate%20eq%20null%20and%20Member/House_Id%20eq%201&$expand=Member)
+
+- **Peers who are ministers** — same, with `House_Id eq 2`:
+  [`MemberGovernmentPosts?$filter=EndDate eq null and Member/House_Id eq 2&$expand=Member`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberGovernmentPosts?$filter=EndDate%20eq%20null%20and%20Member/House_Id%20eq%202&$expand=Member)
+
+- **Membership of a House on a given date** — a membership was live on date *D* if
+  it started on or before *D* and either has no end or ended on or after *D*. Use
+  `MemberConstituencies` for the Commons (replace the date as needed):
+  [`MemberConstituencies?$filter=StartDate le datetime'2000-01-01' and (EndDate eq null or EndDate ge datetime'2000-01-01')`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberConstituencies?$filter=StartDate%20le%20datetime'2000-01-01'%20and%20(EndDate%20eq%20null%20or%20EndDate%20ge%20datetime'2000-01-01'))
+
+  Date literals take the form `datetime'YYYY-MM-DD'`. For the Lords, apply the
+  same start/end logic to `MemberHouseMemberships`, which carries its own
+  `House_Id` (so scope with `House_Id eq 2` directly — no expand needed):
+  [`MemberHouseMemberships?$filter=House_Id eq 2 and StartDate le datetime'2010-01-01' and (EndDate eq null or EndDate ge datetime'2010-01-01')`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberHouseMemberships?$filter=House_Id%20eq%202%20and%20StartDate%20le%20datetime'2010-01-01'%20and%20(EndDate%20eq%20null%20or%20EndDate%20ge%20datetime'2010-01-01'))
+
+  (`MemberHouseMemberships` covers both Houses, so `House_Id eq 1` gives the
+  equivalent Commons view if you prefer one entity for both.)
+
+  **Caveat on historic Lords dates.** MNIS's Lords house-membership records
+  effectively begin at the House of Lords Act 1999, which removed most hereditary
+  peers (the latest start dates in the pre-2000 data cluster around Nov 1999). A
+  membership-on-a-date query for a point *before* the 1999 reform will badly
+  undercount — it returns only the post-reform House (life peers plus the 92
+  retained hereditaries), not the larger pre-reform chamber. Treat the query as
+  reliable from 2000 onwards; for earlier snapshots, the data isn't there.
+
+A note on null filtering: the `ne null` trap above is specific to `ne null`.
+`EndDate eq null` *does* filter correctly (it's how "still in post" / "still
+sitting" is expressed), and filters on expanded navigation properties such as
+`Member/House_Id` are honoured. Only `ne null` is silently ignored.
+
 ## Breaking tenure ties: the oaths table
 
 Members elected at the same general election share a `StartDate`, so a
@@ -66,6 +109,27 @@ A flatter `MemberOaths` set is keyed directly on `Member_Id` and has an
 `OathDate` but a mostly-null `SwearInOrder` — prefer `MemberConstituencyOaths`
 for precedence.
 
-Worked example: the three current MPs first elected on 1983-06-09 tie on
-`StartDate`; their 1983 `SwearInOrder` values (Leigh 9, Corbyn 13, Gale 21) give
-the correct order.
+### Worked example: the 1983 cohort
+
+The three current MPs first elected on 1983-06-09 tie on `StartDate`. No single
+query ranks them — the steps below each fetch one piece of evidence, and the
+final order is assembled by comparing the three `SwearInOrder` values. Each query
+is shown readably, with a link to the live result (Atom XML).
+
+1. Current Commons members, sorted on `StartDate`, surfaces the tie — Member_Ids
+   87 (Gale), 185 (Corbyn) and 345 (Leigh) all show 1983-06-09:
+
+   [`Members?$filter=House_Id eq 1 and CurrentStatusActive eq true&$select=Member_Id,NameDisplayAs,StartDate&$orderby=StartDate`](https://data.parliament.uk/membersdataplatform/open/OData.svc/Members?$filter=House_Id%20eq%201%20and%20CurrentStatusActive%20eq%20true&$select=Member_Id,NameDisplayAs,StartDate&$orderby=StartDate)
+
+2. For each member, find the 1983 constituency membership and note its
+   `MemberConstituency_Id` (here, Leigh → 1435):
+
+   [`MemberConstituencies?$filter=Member_Id eq 345`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberConstituencies?$filter=Member_Id%20eq%20345)
+
+3. Read that membership's oath to get `SwearInOrder`:
+
+   [`MemberConstituencyOaths?$filter=MemberConstituency_Id eq 1435`](https://data.parliament.uk/membersdataplatform/open/OData.svc/MemberConstituencyOaths?$filter=MemberConstituency_Id%20eq%201435)
+
+Repeating steps 2–3 for all three gives Leigh 9, Corbyn 13, Gale 21. Ordering
+those `SwearInOrder` values ascending is done client-side, not by the service,
+and yields the precedence Leigh → Corbyn → Gale.
