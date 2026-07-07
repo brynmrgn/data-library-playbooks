@@ -1,45 +1,58 @@
 ---
 name: whats-on-this-week
-description: How to answer "what's happening in Parliament" from the calendar — its forward-only window, the missing recess signal, and why some calendar rows can't be cited
+description: How to answer "what's coming up in Parliament" from the forward calendar without asserting things the calendar cannot tell you
 ---
 
 # What's on this week
 
-`calendar-events` is the What's On feed: chamber business, Westminster Hall,
-General Committees and Grand Committees. Filter it with `startDateFrom` /
-`startDateTo` (plus `house`, `eventType`, `category`, `committeeId`,
-`memberId`, `searchTerm`) and sort by `startDate` (the default, ascending).
+`calendar-events` mirrors Parliament's What's On: chamber sittings, debates,
+and general/grand committee meetings, forward-only, roughly six months out.
+It answers "what is set down" — it does not answer "is the House sitting", and
+two of its advertised behaviours don't work.
 
-## Four things the calendar will not tell you
+## Working pattern
 
-1. **It is forward-only** (a rolling window, roughly six months out). There is
-   no history here — you cannot ask what happened last week. For past chamber
-   business, that's Hansard, not this resource.
+1. **Browse by date; never call the show endpoint.** `browse_documents` on
+   `calendar-events` filtered to the date range, sorted by date. `get_document`
+   on this type 404s for every id, including ids taken straight from its own
+   listing and genuinely live events (verified with 52949, 50541, 55449, 55467
+   across May–July 2026). Everything you can know about an event is in the
+   browse row.
 
-2. **There is no recess signal.** An empty day or week does **not** mean
-   recess. It could equally be a day with no scheduled business, or a date past
-   the end of the window. The calendar cannot distinguish these — never report
-   "Parliament is in recess" purely from an absence of events.
+2. **Use standard fields, not `minimal`.** Under `fields='minimal'`,
+   calendar-events rows can come back as nothing but `resource_type` + `date` —
+   no title, no uri, nothing citeable.
 
-3. **Select and Joint Committee events are not here.** They are deliberately
-   excluded (to avoid dual-modelling) and surfaced via `committee-events`
-   instead. "What is the X Committee doing this week" needs `committee-events`;
-   this resource only covers General/Grand Committees and the chambers.
+3. **Scope by House/location facets** if the question is chamber-specific, and
+   remember coverage is chamber + general/grand committee business. Select
+   committee sessions live under committee events, not here.
 
-4. **Future entries are provisional.** Business scheduled ahead can be pulled;
-   a cancelled event carries a `cancelledDate`. Treat a forward entry as
-   planned, not guaranteed. (This is upstream fidelity — the real order paper
-   firms up closer to the day — not MCP staleness.)
+## What an empty day does not mean
 
-## Read the list payload, don't chase get_document
+The calendar carries **no recess or sitting-status signal**. A nil return for
+a date is ambiguous between "in recess" and "business not yet tabled" — do not
+assert recess from an empty day. If sitting status matters, say the calendar
+shows no business and flag the ambiguity, or confirm recess dates from an
+announcement (the Leader of the House's business statement in `proceedings`).
 
-The browse payload under `fields='standard'` is complete: each event carries
-`description`, `startDate`/`endDate`, `location`, `house`, `committee`,
-`members`, `eventActivities` (with `attendees`), and `billId`/`billName` for
-bill business. Summarise straight from that — there is no need to call
-`get_document` per event, and the per-event show endpoint is unreliable.
+## What a populated day does not mean
 
-**Do not use `fields='minimal'` on the calendar.** Many calendar rows come back
-under minimal as nothing but `resource_type` + `date` — no title, no uri, no
-identifier, nothing citeable (verified). Use `fields='standard'` and cite from
-`description` + `startDate`.
+Set-downs can be **ghosts**. When a recess is announced after business was set
+down (the classic case: PMB second readings on a sitting Friday that the
+recess then takes), What's On does not clear or cancel the entries — they
+persist with no `cancelledDate`, and the MCP mirrors source faithfully
+(verified 29 May 2026 against whatson.parliament.uk directly). So:
+
+- absence of `cancelledDate` ≠ confirmation the event will happen;
+- a stale-looking entry is an upstream fidelity question, not MCP staleness —
+  don't report it as an index bug.
+
+Report future business as "set down / scheduled as of today", and for PMB
+Fridays specifically, see the cross-model trap in `track-a-bill`.
+
+## Why
+
+Calendar questions get answered for people planning around them, so the failure
+mode is over-assertion: "Parliament is in recess" from an empty day, or "the
+bill will be debated Friday" from a ghost row. The calendar is a statement of
+tabled intentions, and the answer should be worded as one.
