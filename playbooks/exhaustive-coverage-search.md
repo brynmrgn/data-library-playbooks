@@ -47,3 +47,9 @@ specific document by name.
 - Some types also carry `pseudo_terms` (classifier-inferred), which widen recall
   further but are a recall aid, not ground truth — don't cite them as
   "Parliament tagged this as X".
+- **Pick the right SES class for the handle.** Document subjects are SIT-class
+  terms. The one exception is **research-briefing topics**, which use TPG-class
+  terms — so for a briefing topic sweep a TPG id is the *right* handle, whereas
+  everywhere else (written questions and the rest) a TPG term matches nothing.
+  Same label can exist in both classes; take the class that matches the field
+  you're filtering.
