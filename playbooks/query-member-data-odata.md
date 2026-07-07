@@ -5,6 +5,16 @@ description: How to query the MNIS OData v3 service for UK member data — findi
 
 # Querying member data with OData
 
+**First, check whether you need this at all.** For the common lookups — a
+member's party, seat, house, current status, a name→id lookup, or their
+registered financial interests — use the in-server tools `mnis_search_members`,
+`mnis_get_member` and `mnis_get_member_registered_interests`. They wrap the
+modern Members API, return clean JSON, and take the same `Member_Id` the data
+library carries in `seeAlso` — none of the XML/BOM/`ne null` handling below.
+Reach for the OData service in this playbook only for what those don't cover:
+the legacy cross-reference ids (`Dods_Id`/`Pims_Id`/`Clerks_Id`) and swearing-in
+order for precedence ("Father/Mother of the House").
+
 The MNIS OData service is the authoritative source for UK members: who is or was
 an MP or peer, their seat, party, and membership dates. Service root:
 `https://data.parliament.uk/membersdataplatform/open/OData.svc/`. It is a
