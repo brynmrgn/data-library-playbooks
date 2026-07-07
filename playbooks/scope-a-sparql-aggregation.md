@@ -16,6 +16,18 @@ cross-cutting counts** that the structured tools cannot express — for example:
 `sparql_query` is the specialist, not the first move. If the question is really
 "show me the documents about X", stay with `browse_documents`.
 
+## Know where the store ends
+
+The triplestore covers the **data-services graph only** — legislation, written
+and oral questions, proceedings, briefings, deposited papers, statements.
+There are **no classes for committee evidence, committee publications, or
+calendar events**, so committee-domain aggregation ("which organisations
+submitted evidence to the most inquiries") is inexpressible in SPARQL, full
+stop. Answer those by enumeration on the browse side (see
+`exhaustive-coverage-search`) or not at all — don't burn time debugging a
+query the store cannot answer. `sparql_list_classes` is the ground truth for
+what's in scope.
+
 ## Confirm the IRIs before you query
 
 A SPARQL query against the wrong class or predicate IRI returns an empty result
@@ -27,9 +39,31 @@ set, which is a failure, not a pass. Confirm the building blocks first:
    `resolve_term` (do not guess the IRI, and do not pre-expand — pass the label
    or URI and let the thesaurus tools widen it).
 
-## Then write the query
+## Then write the query — shape determines whether it survives the timeout
+
+Queries are killed at **30 seconds**, and whether you hit the limit depends on
+query *shape*, not result size. Two shapes account for every timeout observed
+against this store (verified July 2026, over ~430k written questions):
+
+- **Date filters must use typed literals.**
+  `FILTER(?d >= "2026-01-01T00:00:00"^^xsd:dateTime)` completes;
+  the same filter written `FILTER(STR(?d) >= "2026-01-01")` times out —
+  `STR()` casts defeat the index. Never string-compare dates.
+- **Scope high-cardinality groupings.** `GROUP BY` over members times out
+  unscoped but completes when the pattern is first narrowed by date, session,
+  or subject; the identical query grouped by *department* (low cardinality)
+  is fine unscoped. Rule of thumb: hundreds-of-groups aggregations need a
+  scoping filter inside the pattern; tens-of-groups don't.
 
 Keep the query tabular (`SELECT`) when the consumer wants counts or a ranking.
-Group and order explicitly. If the result set comes back empty, treat it as a
-signal to re-check the class/predicate/term IRIs above before assuming the data
-is absent.
+Group and order explicitly.
+
+## Reading failure correctly
+
+- **Empty result** → re-check the class/predicate/term IRIs above, then check
+  the domain boundary, before assuming the data is absent.
+- **Timeout** → reshape, don't retry: typed literals for dates, scope the
+  grouping, tighten the pattern. An unchanged query will time out again.
+
+For the PQ corpus specifically — the most common aggregation target — worked
+query shapes are in `pq-analysis`.

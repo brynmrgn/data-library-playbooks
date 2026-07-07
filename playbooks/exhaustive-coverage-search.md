@@ -1,0 +1,66 @@
+---
+name: exhaustive-coverage-search
+description: Finding everything on a topic — why a keyword query silently drops documents and when to use term filters or semantic search instead
+---
+
+# Exhaustive coverage search
+
+"Find the document about X" and "find *everything* on X" are different tasks,
+and the tool that is right for the first silently fails the second.
+
+## The trap: `q=` is a hard filter
+
+BM25 keyword search (`q=` on `browse_documents`) returns only documents
+matching the query terms, *then* ranks. Documents on-topic but using different
+vocabulary are **excluded entirely, not ranked low**. Verified failure
+(May 2026): `q=artificial intelligence medicine` against oral-evidence missed
+a live 19 May session in the same inquiry because the session was about CAR-T
+cell therapy and polygenic risk scores — on-topic, wrong words. Nothing in the
+response signals the omission.
+
+So: `q=` for "find the doc about X"; never trust it for "everything on X".
+
+## Working pattern for coverage
+
+1. **Open with a keyword browse anyway — for the facets, not the list.**
+   The `facets` block on the response shows the SES term ids and structural
+   ids (committee, `committeeBusiness`, publisher) that matching documents
+   carry. This is discovery, not the answer.
+
+2. **Re-query with a structural filter + date sort.** Coverage comes from
+   membership, not word-matching:
+   - a topic across a document type → SES `subject` term id (check
+     `expand_term` narrower terms — tag granularity varies, and a document
+     tagged "Photovoltaics" may not carry "Renewable energy"; note labels
+     collide, e.g. two distinct "Renewable energy" concepts, 92809 and 95736);
+   - a committee inquiry → `committeeBusiness=<inquiry id>`, sort
+     `publicationDate desc` — the reliable enumeration path (the filter is
+     flagged `hidden` in `describe_resource_type` but works; e.g. 9659 =
+     "Innovation in the NHS"). Then hand off to `analyse-written-evidence`;
+   - "everything from body Y" → `publisher` / `creator` / `department` ids
+     (25267 = Commons Library).
+
+3. **Add `search_content` for conceptual framings.** Semantic search catches
+   the different-vocabulary documents BM25 drops, and it's chunk-level — the
+   same parent can appear three times, so it supplements the enumeration
+   rather than replacing it. It covers only the full-text-indexed types
+   (research-briefings, written-questions, written-evidence, oral-evidence,
+   deposited-papers, written-statements); on catalogue-only types it returns
+   a 0 indistinguishable from "no matches". It also has **no date filter** —
+   recency scoping must come from the browse side.
+
+4. **Retrieve lean.** Once ids are known: `fields='minimal'`, `facets='none'`
+   — but note `minimal` currently drops `id` (needed for `get_document`);
+   derive it from the uri tail or fall back to standard fields. Committee
+   evidence rows are enormous — `per_page` 5–8 or the response spills.
+   Escalate to `get_document` only for hits you actually need to read.
+
+5. **State the method.** An exhaustive claim is only as defensible as its
+   enumeration: "all N submissions tagged/filed under Y, date-sorted" survives
+   scrutiny; "a keyword search found…" does not.
+
+## Why
+
+Coverage failures are silent: the response looks complete, ranks sensibly, and
+is missing the most recent relevant thing. Structural filters make the
+completeness claim checkable; keyword search never can.
