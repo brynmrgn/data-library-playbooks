@@ -19,6 +19,13 @@ two of its advertised behaviours don't work.
    across May–July 2026). Everything you can know about an event is in the
    browse row.
 
+   **Trap: the date filters go soft when `q=` is present.** With a keyword
+   query alongside `startDateFrom`/`startDateTo`, past events leak back in — the
+   date bounds behave as ranking signals, not hard constraints (verified 8 July
+   2026). So for "what's scheduled from today", filter by date **without** a
+   `q=`, and if you must keyword-search, discard out-of-range rows client-side
+   rather than trusting the bound.
+
 2. **Use standard fields, not `minimal`.** Under `fields='minimal'`,
    calendar-events rows can come back as nothing but `resource_type` + `date` —
    no title, no uri, nothing citeable.
