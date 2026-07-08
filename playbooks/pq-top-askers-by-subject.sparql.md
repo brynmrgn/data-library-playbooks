@@ -1,23 +1,59 @@
 ---
 name: pq-top-askers-by-subject.sparql
-description: Verified worked SPARQL — top tabling members for a subject since a date; the companion query referenced by pq-analysis
+description: Verified worked SPARQL — top tabling members for a subject (widened to its narrower concepts) since a date; the companion query referenced by pq-analysis
 ---
 
 # Top askers by subject — worked query
 
-Companion to `pq-analysis`. A verified `sparql_query` that ranks the members
-tabling the most written questions on a subject since a date. Copy it, swap the
-subject IRI and the date literal.
+Companion to `pq-analysis`. Ranks the members tabling the most written questions
+on a subject since a date.
 
-## The query
+A bare `dcterms:subject <iri>` match **undercounts** — it misses questions tagged
+only with a *narrower* concept (Wind power, Solar power, Photovoltaics under
+"Renewable energy"). For "Renewable energy" since 1 Jan 2026 that's 1,023
+questions exact vs **3,289** across the subtree. So widen to the narrower terms —
+in a way Oxigraph can handle under load.
+
+## Step 1 — resolve the subject subtree (cheap, isolated)
+
+Widen the SIT subject to itself + its narrower concepts. Use `expand_term`
+(direction narrower), or this one-off query — it's a sub-second traversal on its
+own:
+
+```sparql
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+SELECT ?t WHERE { <http://data.parliament.uk/terms/92809> skos:narrower* ?t }
+```
+
+For "Renewable energy" (92809) that's ~20 terms: Wind / Solar / Tidal / Wave /
+Hydroelectric / Geothermal power, Photovoltaics, Biofuels, Combined heat and
+power, Renewables obligation, and so on.
+
+## Step 2 — rank against that fixed set (bounded, selective)
+
+Paste those IRIs into a `VALUES` block. **This is the robust shape:** the planner
+gets concrete, selective subjects rather than evaluating a property path across
+the ~430k-question join, so it stays well inside the 30s limit.
 
 ```sparql
 PREFIX parl: <http://data.parliament.uk/schema/parl#>
 PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
-SELECT ?member (COUNT(?q) AS ?n) WHERE {
+SELECT ?member (COUNT(DISTINCT ?q) AS ?n) WHERE {
+  VALUES ?subject {
+    <http://data.parliament.uk/terms/92809> <http://data.parliament.uk/terms/11962>
+    <http://data.parliament.uk/terms/90341> <http://data.parliament.uk/terms/90585>
+    <http://data.parliament.uk/terms/93503> <http://data.parliament.uk/terms/93470>
+    <http://data.parliament.uk/terms/12460> <http://data.parliament.uk/terms/525805>
+    <http://data.parliament.uk/terms/508369> <http://data.parliament.uk/terms/518406>
+    <http://data.parliament.uk/terms/93465> <http://data.parliament.uk/terms/472162>
+    <http://data.parliament.uk/terms/488403> <http://data.parliament.uk/terms/12139>
+    <http://data.parliament.uk/terms/91425> <http://data.parliament.uk/terms/12694>
+    <http://data.parliament.uk/terms/93267> <http://data.parliament.uk/terms/91596>
+    <http://data.parliament.uk/terms/93475> <http://data.parliament.uk/terms/93067>
+  }
   ?q a parl:WrittenParliamentaryQuestion ;
-     dcterms:subject <http://data.parliament.uk/terms/92809> ;   # Renewable energy (SIT)
+     dcterms:subject ?subject ;
      parl:dateTabled ?d ;
      parl:tablingMemberPrinted ?member .
   FILTER(?d >= "2026-01-01T00:00:00"^^xsd:dateTime)
@@ -25,37 +61,44 @@ SELECT ?member (COUNT(?q) AS ?n) WHERE {
 GROUP BY ?member ORDER BY DESC(?n) LIMIT 10
 ```
 
-## Verified output (run July 2026)
+`COUNT(DISTINCT ?q)` because a question tagged with both the parent and a child
+would otherwise count twice.
 
-Subject 92809 carries 1,025 written questions in total; scoped to those tabled
-since 1 January 2026, the top tablers are:
+## Verified output (run July 2026, subtree since 1 Jan 2026)
 
 ```
 member,n
-"McMurdock, James",17
-"Bowie, Andrew",7
-"Heylings, Pippa",6
-"Ramsay, Adrian",5
-"Stafford, Gregory",4
-The Lord Bishop of Norwich,4
-"MacDonald, Mr Angus",3
-"Young, Claire",3
+"McMurdock, James",54
+"Bowie, Andrew",15
+"Heylings, Pippa",11
+"Hollinrake, Kevin",10
+"Morello, Edward",9
+"Mullan, Dr Kieran",8
+"Stafford, Gregory",6
+"Hobhouse, Wera",6
+"Niblett, Samantha",5
+"Maguire, Ben",5
 ```
 
-## Why it completes (and how to keep it that way)
+Exact-subject-only, for comparison: McMurdock 17, Bowie 7, Heylings 6 — the
+narrower terms roughly treble the counts and surface members (Hollinrake,
+Morello, Mullan) who tag under wind/solar, not the parent concept.
 
-- **Use the SIT-class subject IRI, not its TPG twin.** "Renewable energy" is
-  both 92809 (SIT) and 95736 (TPG); only the SIT concept tags written
-  questions. Filtering on 95736 returns 0 — and, worse, the non-selective
-  triple makes the planner scan the whole ~430k class and time out. Resolve via
-  `search_terms(id='ses')`, take the SIT id, and COUNT it first:
-  `SELECT (COUNT(?q) AS ?n) WHERE { ?q a parl:WrittenParliamentaryQuestion ; dcterms:subject <iri> }`.
-- **Typed date literal.** `"2026-01-01T00:00:00"^^xsd:dateTime`, never
-  `FILTER(STR(?d) >= "2026-01-01")` — the string cast defeats the index and
-  times out.
-- **The subject filter is what makes the member GROUP BY safe.** A selective
-  subject (here 1,025 questions) narrows the working set before the
-  high-cardinality grouping, so this completes where an unscoped GROUP BY over
-  members would not. See `scope-a-sparql-aggregation`.
+## Keeping it inside the timeout
 
-For a name into party / seat / tenure, join out per `join-member-across-sources`.
+- **SIT subject IRI, not the TPG twin.** "Renewable energy" is 92809 (SIT) and
+  95736 (TPG); only the SIT concept tags questions. Filtering the TPG returns 0
+  and can make the planner scan the whole class and time out. COUNT the subject
+  first to confirm it's selective.
+- **Typed date literal** — `"2026-01-01T00:00:00"^^xsd:dateTime`, never
+  `FILTER(STR(?d) >= "2026-01-01")`; the string cast defeats the index.
+- **Prefer the two-step VALUES to an inline `skos:narrower*`** in the ranking.
+  The one-query form (`<subject> skos:narrower* ?subject` inside the join) *does*
+  work, but it's heavier and likelier to tip over under triplestore load; the
+  bounded VALUES set is the reliable shape.
+- **A timeout can be transient load, not a bad query.** If a known-good query
+  times out, confirm the IRI, run the cheap selective COUNT, then **retry once**
+  before reshaping — verified: this ranking timed out once and ran clean on the
+  retry.
+
+For a name → party / seat / tenure, join out per `join-member-across-sources`.

@@ -62,8 +62,21 @@ Group and order explicitly.
 
 - **Empty result** → re-check the class/predicate/term IRIs above, then check
   the domain boundary, before assuming the data is absent.
-- **Timeout** → reshape, don't retry: typed literals for dates, scope the
-  grouping, tighten the pattern. An unchanged query will time out again.
+- **Timeout** → reshape first: typed literals for dates, scope the grouping,
+  tighten the pattern. But a timeout can also be **transient load**, not a bad
+  query — once the IRIs are confirmed and a cheap selective COUNT runs fast, one
+  retry is worth it before assuming the shape is wrong (verified: a known-good
+  ranking timed out once and ran clean on retry).
+
+## Widening a subject without blowing up
+
+To count/rank across a subject *and its narrower concepts*, don't drop an inline
+`skos:narrower*` into the big join — the property path across a large class is
+heavy and tips over under load. Two-step instead: resolve the subtree cheaply
+(`expand_term` narrower, or a standalone `<term> skos:narrower* ?t` query — the
+thesaurus lives in the same store), then match a bounded `VALUES` set of those
+IRIs with `COUNT(DISTINCT ?q)`. The planner gets concrete, selective subjects
+and stays inside the limit. Worked example in `pq-top-askers-by-subject.sparql`.
 
 For the PQ corpus specifically — the most common aggregation target — worked
 query shapes are in `pq-analysis`.
