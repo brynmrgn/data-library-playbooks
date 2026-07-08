@@ -38,8 +38,17 @@ large (~430k written questions), which makes the query-shape traps live:
 - **Scope high-cardinality groupings.** GROUP BY member over the whole corpus
   times out; the identical query date- or session-scoped completes. GROUP BY
   department is low-cardinality and safe unscoped.
-- A worked, verified query (top tablers on a subject since a date) is in the
-  project file `pq-top-askers-by-subject.sparql.md`.
+- **Widen a subject to its narrower concepts.** A bare `dcterms:subject <iri>`
+  match misses questions tagged only with a child term (Wind / Solar power under
+  Renewable energy) — often a ~3x undercount. Resolve the subtree with
+  `expand_term` (narrower), then rank against those IRIs as a `VALUES` set with
+  `COUNT(DISTINCT ?q)`; prefer that to an inline `skos:narrower*` across the join,
+  which is heavier under load.
+- **A timeout can be transient triplestore load**, not a bad query. If a
+  known-good query times out, confirm the IRI, run the cheap selective COUNT,
+  then retry once before reshaping.
+- A worked, verified query — top tablers on a subject (widened to its narrower
+  concepts) since a date — is in the companion `pq-top-askers-by-subject.sparql`.
 
 PQs are in the data-services graph, so they are on the right side of the
 triplestore's domain boundary (unlike committee material — see
