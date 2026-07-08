@@ -16,21 +16,31 @@ resource type that *sounds* right is broken.
    (`q=flood` returns the flood bills). `search_content` correctly returns 0
    for bills; that zero means "not semantically indexed", not "no such bill".
 
-2. **Read stages from the bill record, never from `bill-stages`.**
-   `browse_documents` on `bill-stages` with `filters={billId: <n>}` returns
-   total 0 for *every* billId (verified against 3311, Energy Act 2023, and
-   four others across May–July 2026), even though the same data is populated
-   on the `bills` resource. The full stage list and `currentStage.stageSittings`
-   on the bill record are the reliable source.
+2. **Read the sitting schedule from a `browse_documents` on `bills`, not from
+   `bill-stages` and not from `get_document`.** `bill-stages` returns total 0
+   for *every* billId (verified against 3311 and others). And mind the
+   projection drift: `currentStage.stageSittings` — the dated sittings for the
+   current stage — is present on a **`browse_documents` on `bills`** result
+   (standard fields) but is **dropped by `get_document`**, whose `currentStage`
+   carries only the stage label (verified 8 July 2026, billId 4124). So browse
+   the bill for the schedule; use `get_document` only for the fuller record.
+   For the full historic stage list beyond the current one, the bill record on
+   this side is thin — fall back to the Bills API (`/Bills/<id>/Stages`).
 
 3. **Stage *debates* live in proceedings, not on the bill.** For what was said
    at second reading, switch to `proceedings` with a phrase-quoted `q=`
    (e.g. `q="Renters' Rights Bill"`) and sort by date. The bill record tells
    you *where* the bill is; Hansard tells you *what happened*.
 
-4. **Forward look: the calendar.** Upcoming stages appear in `calendar-events`
-   (browse by date — see `whats-on-this-week` for that type's own traps,
-   including the broken show endpoint).
+4. **Forward look: the calendar.** Upcoming stages appear in `calendar-events`,
+   which carry `billId`/`billName` in their payloads — but the **`billId`
+   filter is broken**: `describe_resource_type` advertises it, yet the search
+   endpoint 400s it as an unknown parameter (verified 8 July 2026). So you
+   can't scope events to a bill structurally; browse by **date range**
+   (`startDateFrom`/`startDateTo`) and match on `billName`/title, or filter the
+   returned rows client-side on `billId`. Note the date filters are soft when a
+   `q=` is also present (past events leak in) — see `whats-on-this-week` for
+   that and the broken show endpoint.
 
 5. **Once enacted, leave this MCP.** Chain to **lex-uk-law** for the Act's
    text, commencement, and subsequent amendment history. `command-papers` and
