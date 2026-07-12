@@ -13,7 +13,7 @@ resource type that *sounds* right is broken.
 
 1. **Find the bill.** `browse_documents` on `bills` with `q=` — bills are a
    catalogue-only type, so `q=` searches title/summary metadata and works well
-   (`q=flood` returns the flood bills). `search_content` correctly returns 0
+   (`q=flood` returns the flood bills). `semantic_search` correctly returns 0
    for bills; that zero means "not semantically indexed", not "no such bill".
 
 2. **Read the sitting schedule from a `browse_documents` on `bills`, not from

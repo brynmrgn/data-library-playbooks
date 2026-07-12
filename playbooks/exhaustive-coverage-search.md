@@ -40,14 +40,19 @@ So: `q=` for "find the doc about X"; never trust it for "everything on X".
    - "everything from body Y" → `publisher` / `creator` / `department` ids
      (25267 = Commons Library).
 
-3. **Add `search_content` for conceptual framings.** Semantic search catches
-   the different-vocabulary documents BM25 drops, and it's chunk-level — the
-   same parent can appear three times, so it supplements the enumeration
-   rather than replacing it. It covers only the full-text-indexed types
-   (research-briefings, written-questions, written-evidence, oral-evidence,
-   deposited-papers, written-statements); on catalogue-only types it returns
-   a 0 indistinguishable from "no matches". It also has **no date filter** —
-   recency scoping must come from the browse side.
+3. **Add `semantic_search` for conceptual framings, at document granularity.**
+   Semantic search catches the different-vocabulary documents BM25 drops. By
+   default it's chunk-level (the same parent can appear several times), so for a
+   coverage check pass **`granularity='document'`** — it collapses to distinct
+   documents (best passage per doc, with a `passage_matches` count), giving you a
+   document set you can **diff directly against the step-2 enumeration**: the
+   documents semantic surfaced that your structural filter didn't are your recall
+   gap. Each result carries `resource_type` + `resource_id` for a `get_document`
+   follow-up. It covers only the full-text-indexed types (research-briefings,
+   written-questions, written-evidence, oral-evidence, deposited-papers,
+   written-statements); on catalogue-only types it returns a 0 indistinguishable
+   from "no matches". It also has **no date filter** — recency scoping must come
+   from the browse side.
 
 4. **Retrieve lean.** Once ids are known: `fields='minimal'`, `facets='none'`
    — but note `minimal` currently drops `id` (needed for `get_document`);

@@ -16,7 +16,7 @@ results to count them by hand, or writing SPARQL to fetch ten question texts.
 AND:
 
 - `subject` = what the question is about (SIT class terms — resolve via
-  `search_terms` against the `ses` source; the old per-facet source ids like
+  `find_term_id` against the `ses` source; the old per-facet source ids like
   `subject` now return empty *silently*);
 - `department` = the answering department;
 - `dateFrom`/`dateTo` for the window.
