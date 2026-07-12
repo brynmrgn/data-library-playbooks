@@ -19,25 +19,51 @@ changed playbook should be mirrored there in the same change set.
 
 ## File and frontmatter
 
-Create `playbooks/<name>.md`:
+Create `playbooks/<name>/SKILL.md` (one folder per playbook):
 
 ```markdown
 ---
 name: <name>
-description: One line — task-shaped, e.g. "How to trace a bill through Parliament — where stage data lives and why bill-stages is a dead end"
+description: >-
+  Trigger-shaped — when should an agent reach for this? Give concrete phrasings
+  and an explicit "even if the user doesn't say X". e.g. "Use when the user asks
+  about a bill's progress, current stage, or amendments — even if they don't say
+  'bill' (e.g. 'where has the Renters' Rights Bill got to?')."
+id: <name>
+title: Human-readable title
+task_types:
+  - <one or more controlled task-type slugs>
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+Optional framing shown only to the skill-loading path — stripped from the
+get_playbook body, kept for a fresh skill load.
+<!-- /skill-only -->
 
 # Title
 ...
 ```
 
-- **`name` must equal the filename** (minus `.md`). `get_playbook` keys on the
-  slug.
-- **`description` must be a single physical line.** `list_playbooks` returns
-  *only* name + description, so it is the routing index — write it task-shaped
-  so an agent can match it to the shape of a task without opening the file.
-  Note the server's frontmatter parser is naive (`key: value` per line): it does
-  **not** support YAML folded scalars (`>-`) or multi-line values. One line.
+- **`name` must equal the folder name.** Each playbook is its own directory,
+  `playbooks/<name>/SKILL.md`; `get_playbook` keys on the slug.
+- **`description` is the routing signal.** `list_playbooks` returns the full
+  frontmatter (name, id, title, description, task_types, sources, version), so
+  the description is what an agent — or the host classifier — matches a task
+  against. Write it trigger-shaped. The parser is full YAML (YamlDotNet):
+  folded scalars (`>-`) and lists are supported, and unknown keys are ignored.
+- **`task_types`** are the controlled-vocabulary intent tags the host classifier
+  binds to (e.g. `bill_tracking`, `pq_analysis`). The host owns the canonical
+  registry — add new types through it, don't coin them here.
+- **`sources`** declares which corpora the playbook touches — `[parliament]` for
+  a single-source playbook. A cross-source composite lists all its sources and
+  is served host-side only; this MCP serves a playbook iff its `sources` are a
+  subset of what it owns. Absent/empty = served everywhere.
+- **`<!-- skill-only -->` … `<!-- /skill-only -->`** blocks are stripped from the
+  `get_playbook` body but kept for the skill-loading path — use for up-front
+  framing that only helps a fresh skill load.
 
 ## The quality bar
 
@@ -60,8 +86,9 @@ description: One line — task-shaped, e.g. "How to trace a bill through Parliam
 
 ## Checklist before you open a PR
 
-- [ ] `name` matches the filename
-- [ ] `description` is one line and reads as a routing entry
+- [ ] `name` matches the folder name (`playbooks/<name>/SKILL.md`)
+- [ ] `description` reads as a trigger/routing entry
+- [ ] `task_types` use the host's controlled vocabulary; `sources` is set
 - [ ] Every factual claim was checked against the live MCP
 - [ ] A worked example is included where applicable
 - [ ] Neighbouring tools/MCPs are named inline where the task chains out

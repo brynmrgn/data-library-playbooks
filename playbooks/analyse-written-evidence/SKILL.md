@@ -1,7 +1,25 @@
 ---
 name: analyse-written-evidence
-description: How to analyse a body of written-evidence submissions to a committee inquiry without over-weighting whoever submitted first
+description: >-
+  Use when the user asks you to analyse or summarise the WRITTEN (or oral)
+  EVIDENCE submitted to a committee inquiry — "what did people tell the X
+  inquiry?", "summarise the submissions on Y", "who supported or opposed Z?" —
+  even if they don't say "evidence". For a BODY of submissions, not a single
+  document.
+id: analyse-written-evidence
+title: Analysing written evidence
+task_types:
+  - evidence_analysis
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library tools available. Reach for this when
+a request is about a body of committee evidence submissions, not one
+document.
+<!-- /skill-only -->
 
 # Analysing written evidence
 

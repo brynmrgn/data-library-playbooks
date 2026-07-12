@@ -1,7 +1,25 @@
 ---
 name: whats-on-this-week
-description: How to answer "what's coming up in Parliament" from the forward calendar without asserting things the calendar cannot tell you
+description: >-
+  Use for FORTHCOMING parliamentary business from the forward calendar —
+  "what's on in the Lords this week?", "what's coming up on X?", "is the House
+  sitting Thursday?", debates and committee meetings set down in the next days
+  or weeks — even if they don't say "calendar". Covers what the calendar can
+  and cannot tell you (no recess or sitting-status signal).
+id: whats-on-this-week
+title: What's on this week
+task_types:
+  - forward_business
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library tools available. Reach for this for
+forthcoming business from the forward calendar — what is set down, not what
+has happened.
+<!-- /skill-only -->
 
 # What's on this week
 

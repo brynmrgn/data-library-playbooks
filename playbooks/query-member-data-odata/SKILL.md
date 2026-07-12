@@ -1,7 +1,24 @@
 ---
 name: query-member-data-odata
-description: How to query the MNIS OData v3 service for UK member data — finding members, their seat, party, and membership dates, ranking by tenure or precedence, and the format traps that will otherwise cost you time
+description: >-
+  Use for the NICHE member-data lookups the in-server mnis_* tools don't cover
+  — legacy cross-reference ids, oaths/precedence and "Father of the House"
+  order, ranking by tenure, or bulk OData queries against MNIS. For ordinary
+  lookups (party, seat, status, interests) use mnis_search_members /
+  mnis_get_member first; this is the fallback.
+id: query-member-data-odata
+title: Querying member data with OData (MNIS)
+task_types:
+  - member_lookup
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library and member tools available. Reach
+for this only when the mnis_* tools don't cover the member-data question.
+<!-- /skill-only -->
 
 # Querying member data with OData
 

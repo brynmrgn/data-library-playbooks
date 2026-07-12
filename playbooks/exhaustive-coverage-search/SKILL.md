@@ -1,7 +1,25 @@
 ---
 name: exhaustive-coverage-search
-description: Finding everything on a topic — why a keyword query silently drops documents and when to use term filters or semantic search instead
+description: >-
+  Use when the user wants EVERYTHING on a topic, not just a document about it
+  — "find all…", "a complete list of…", "has Parliament looked at X at all?",
+  or any claim that must be exhaustive or defensible — even when they don't
+  say "everything" (a bare "what has Parliament done on X?" that expects
+  completeness counts). Also when a keyword search feels like it is missing
+  things.
+id: exhaustive-coverage-search
+title: Exhaustive coverage search
+task_types:
+  - topic_coverage
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library tools available. Reach for this when
+a request needs COVERAGE — everything on a topic — not the single best hit.
+<!-- /skill-only -->
 
 # Exhaustive coverage search
 

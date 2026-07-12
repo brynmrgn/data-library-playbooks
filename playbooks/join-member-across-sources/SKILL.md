@@ -1,7 +1,25 @@
 ---
 name: join-member-across-sources
-description: The member join spine — data library seeAlso to MNIS Member_Id to Wikidata P10428 — for enriching parliamentary results with member data Parliament does not hold
+description: >-
+  Use when a member-shaped answer needs data from MORE than one source joined
+  — enriching data-library results (what a member DID) with MNIS (what they
+  ARE: seat, party, dates) or Wikidata (external ids) — e.g. "the party of
+  everyone who asked about X", "link these members to Wikidata". The seeAlso
+  to Member_Id to Wikidata P10428 join spine.
+id: join-member-across-sources
+title: Joining member data across sources
+task_types:
+  - member_lookup
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library and member tools available. Reach
+for this when a member question needs the data-library / MNIS / Wikidata
+join.
+<!-- /skill-only -->
 
 # Joining member data across sources
 

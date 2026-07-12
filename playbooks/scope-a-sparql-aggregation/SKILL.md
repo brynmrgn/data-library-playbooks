@@ -1,7 +1,24 @@
 ---
 name: scope-a-sparql-aggregation
-description: When and how to reach for sparql_query for aggregation, ranking and cross-cutting counts the structured tools cannot express
+description: >-
+  Use when a question needs AGGREGATION, RANKING, or CROSS-CUTTING COUNTS the
+  structured browse/filter tools cannot express — "how many X by Y", "top N…",
+  distributions over time, "which department/member/committee most…" — even if
+  they don't mention SPARQL. Covers when to reach for sparql_query and how to
+  scope it without timing out.
+id: scope-a-sparql-aggregation
+title: Scoping a SPARQL aggregation
+task_types:
+  - sparql_aggregation
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the SPARQL tools available. Reach for this when the question is a
+count, ranking, or distribution that browse_documents cannot express.
+<!-- /skill-only -->
 
 # Scoping a SPARQL aggregation
 

@@ -1,7 +1,26 @@
 ---
 name: track-a-bill
-description: How to trace a bill's progress — where stage data actually lives, why bill-stages is a dead end, and the PMB calendar traps
+description: >-
+  Use when the user asks about a UK bill's progress, current stage, amendments,
+  committee scrutiny, sponsors, or when it is likely to become law — even if they
+  don't say "bill" explicitly (e.g. "where has the Renters' Rights Bill got to?",
+  "what's happening with the data protection reforms?"). Also for readings, report
+  stage, and ping-pong between the Commons and Lords.
+id: track-a-bill
+title: Tracking a bill through Parliament
+task_types:
+  - bill_tracking
+  - legislation_progress
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library tools available. Reach for this workflow
+whenever a request is about a specific bill's journey through Parliament — its
+stage, amendments, and schedule — not just its final content.
+<!-- /skill-only -->
 
 # Tracking a bill
 

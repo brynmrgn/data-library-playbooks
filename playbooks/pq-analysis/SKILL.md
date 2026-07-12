@@ -1,7 +1,25 @@
 ---
 name: pq-analysis
-description: Researching written parliamentary questions — browse for the question texts, SPARQL for the aggregates, and the query shapes that avoid timeouts
+description: >-
+  Use for written or oral PARLIAMENTARY QUESTIONS — reading the texts of
+  questions and answers on a topic, or counting/ranking them (how many, by
+  whom, by department, over time) — e.g. "what has the government said about X
+  in PQs?", "how many questions on Y?", "which MPs ask most about Z?" — even
+  if they don't say "PQ" or "written question".
+id: pq-analysis
+title: Analysing parliamentary questions
+task_types:
+  - pq_analysis
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the Parliamentary Data Library tools available. Reach for this for
+anything about written or oral parliamentary questions — their texts or
+their aggregates.
+<!-- /skill-only -->
 
 # Analysing parliamentary questions
 

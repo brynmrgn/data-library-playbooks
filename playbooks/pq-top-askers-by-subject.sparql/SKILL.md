@@ -1,7 +1,24 @@
 ---
 name: pq-top-askers-by-subject.sparql
-description: Verified worked SPARQL — top tabling members for a subject (widened to its narrower concepts) since a date; the companion query referenced by pq-analysis
+description: >-
+  Use when ranking the MEMBERS who table the most written questions on a
+  subject since a date — the verified worked SPARQL query (subject widened to
+  its narrower concepts) that pq-analysis references for its top-askers step.
+  Reach for it when you need the exact query, not just the approach.
+id: pq-top-askers-by-subject.sparql
+title: Top askers by subject — worked SPARQL query
+task_types:
+  - pq_analysis
+  - sparql_aggregation
+sources:
+  - parliament
+version: 1
 ---
+
+<!-- skill-only -->
+You have the SPARQL tools available. This is the verified query behind pq-
+analysis's top-askers ranking.
+<!-- /skill-only -->
 
 # Top askers by subject — worked query
 
